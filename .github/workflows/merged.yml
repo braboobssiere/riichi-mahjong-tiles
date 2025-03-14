@@ -1,36 +1,45 @@
-name: Merge Tiles
-on: workflow_dispatch
+name: Merge and Commit Tiles
+on: [workflow_dispatch, push]
 
 jobs:
-  merge-images:
+  merge-and-commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up directories
-      run: |
-        mkdir -p Artifact
-        ls -la Export/Regular
-
     - name: Install dependencies
-      run: sudo apt-get install -y imagemagick
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
 
-    - name: Merge images
+    - name: Create output directory
+      run: mkdir -p Merged/Regular
+
+    - name: Merge images with scaling
       run: |
         FRONT="Export/Regular/Front.png"
+        # Get background dimensions
+        FRONT_SIZE=$(identify -format "%wx%h" "$FRONT")
+        SCALE="90%"
+        
         for image in Export/Regular/*.png; do
           filename=$(basename "$image")
-          if [[ "$filename" == "Back.png" || "$filename" == "Blank.png" ]]; then
-            continue
-          fi
-          composite -gravity center "$image" "$FRONT" "Artifact/$filename"
-          echo "Processed: $filename"
+          [[ "$filename" == "Back.png" || "$filename" == "Blank.png" ]] && continue
+          
+          # Scale overlay to 90% of background size and center
+          composite -gravity center \
+            \( "$image" -resize "$SCALE" -background none -extent "$FRONT_SIZE" \) \
+            "$FRONT" \
+            "Merged/Regular/$filename"
         done
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: merged-tiles
-        path: Artifact/
-        retention-days: 7
+    - name: Commit and push changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add Merged/Regular
+        git commit -m "Auto-merged tiles (scaled 90%)"
+        git push origin 
