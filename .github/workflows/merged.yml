@@ -1,0 +1,36 @@
+name: Merge Tiles
+on: workflow_dispatch
+
+jobs:
+  merge-images:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up directories
+      run: |
+        mkdir -p Artifact
+        ls -la Export/Regular
+
+    - name: Install dependencies
+      run: sudo apt-get install -y imagemagick
+
+    - name: Merge images
+      run: |
+        FRONT="Export/Regular/Front.png"
+        for image in Export/Regular/*.png; do
+          filename=$(basename "$image")
+          if [[ "$filename" == "Back.png" || "$filename" == "Blank.png" ]]; then
+            continue
+          fi
+          composite -gravity center "$image" "$FRONT" "Artifact/$filename"
+          echo "Processed: $filename"
+        done
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: merged-tiles
+        path: Artifact/
+        retention-days: 7
