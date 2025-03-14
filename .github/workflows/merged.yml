@@ -21,19 +21,16 @@ jobs:
     - name: Merge images with scaling
       run: |
         FRONT="Export/Regular/Front.png"
-        # Get background dimensions
         FRONT_SIZE=$(identify -format "%wx%h" "$FRONT")
-        SCALE="90%"
-        
+    
         for image in Export/Regular/*.png; do
           filename=$(basename "$image")
-          [[ "$filename" == "Back.png" || "$filename" == "Blank.png" ]] && continue
-          
-          # Scale overlay to 90% of background size and center
-          composite -gravity center \
-            \( "$image" -resize "$SCALE" -background none -extent "$FRONT_SIZE" \) \
-            "$FRONT" \
-            "Merged/Regular/$filename"
+          [[ "$filename" == @(Back|Blank).png ]] && continue
+      
+          # Scale to 90% while maintaining aspect ratio, then center on front
+          convert "$FRONT" \    
+            \( "$image" -resize "90%" -background none -gravity center -extent "$FRONT_SIZE" \) \
+            -composite "Merged/Regular/$filename"
         done
 
     - name: Commit and push changes
