@@ -16,25 +16,31 @@ jobs:
         sudo apt-get install -y imagemagick
 
     - name: Create output directory
-      run: mkdir -p Merged/Black
+      run: mkdir -p Merged/Regular
 
     - name: Merge images with scaling
       run: |
-        FRONT="Export/Black/Front.png"
+        FRONT="Export/Regular/Front.png"
+        BACK="Export/Regular/Back.png"
         FRONT_SIZE=$(identify -format "%wx%h" "$FRONT")
+
+            # Copy Front and Back directly
+        mkdir -p Merged/Regular
+        cp "$FRONT" "Merged/Regular/Front.png"
+        cp "$BACK" "Merged/Regular/Back.png"
     
-        for image in Export/Black/*.png; do
+        for image in Export/Regular/*.png; do
           filename=$(basename "$image")
-          [[ "$filename" == @(Back|Blank).png ]] && continue
+          [[ "$filename" == @(Front|Back).png ]] && continue
       
           convert "$image" -resize "90%" -background none -gravity center -extent "$FRONT_SIZE" \
-            "$FRONT" +swap -composite "Merged/Black/$filename"
+            "$FRONT" +swap -composite "Merged/Regular/$filename"
         done
 
     - name: Commit and push changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add Merged/Black
+        git add Merged/Regular
         git commit -m "Auto-merged tiles (scaled 90%)"
         git push origin 
