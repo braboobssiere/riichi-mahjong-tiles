@@ -27,10 +27,8 @@ jobs:
           filename=$(basename "$image")
           [[ "$filename" == @(Back|Blank).png ]] && continue
       
-          # Scale to 90% while maintaining aspect ratio, then center on front
-          convert "$FRONT" \    
-            \( "$image" -resize "90%" -background none -gravity center -extent "$FRONT_SIZE" \) \
-            -composite "Merged/Regular/$filename"
+          convert "$image" -resize "90%" -background none -gravity center -extent "$FRONT_SIZE" \
+            "$FRONT" +swap -composite "Merged/Regular/$filename"
         done
 
     - name: Commit and push changes
