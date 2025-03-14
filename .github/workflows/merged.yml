@@ -33,7 +33,7 @@ jobs:
           filename=$(basename "$image")
           [[ "$filename" == @(Front|Back).png ]] && continue
       
-          convert "$image" -resize "90%" -background none -gravity center -extent "$FRONT_SIZE" \
+          convert "$image" -resize "80%" -background none -gravity center -extent "$FRONT_SIZE" \
             "$FRONT" +swap -composite "Merged/Black/$filename"
         done
 
